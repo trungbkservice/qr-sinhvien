@@ -11,7 +11,7 @@ return [
     // 1. CẤU HÌNH TRANG LIVE CÂY TRI THỨC (/live)
     'live' => [
         // Ảnh nền cây tri thức (nằm trong thư mục public/)
-        'background_image' => 'images/cay-tri-thuc-3.webp',
+        'background_image' => 'images/cay-tri-thuc-2.webp',
 
         // Link đích khi quét QR Code (để trống '' nếu muốn tự lấy link /quiz)
         'qr_target_url' => '', 

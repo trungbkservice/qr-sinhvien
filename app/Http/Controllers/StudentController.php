@@ -10,7 +10,7 @@ use Pusher\Pusher;
 class StudentController extends Controller
 {
     /**
-     * Hàm đọc trực tiếp dữ liệu từ file storage/app/students.txt
+     * 1. Đọc danh sách sinh viên từ file storage/app/students.txt
      */
     private function getStudentsFromTextFile(): array
     {
@@ -39,12 +39,52 @@ class StudentController extends Controller
         return $students;
     }
 
-    // 1. Màn hình Live (Máy chiếu)
+    /**
+     * 2. Đọc Cấu hình Câu hỏi & Đáp án từ storage/app/quiz.txt (Fallback về config nếu chưa có file)
+     */
+    private function getQuizFromTextFile(): array
+    {
+        $filePath = storage_path('app/quiz.txt');
+        
+        if (!file_exists($filePath)) {
+            return [
+                'question_title' => config('quiz.quiz.question_title'),
+                'options'        => config('quiz.quiz.options'),
+            ];
+        }
+
+        $content = file_get_contents($filePath);
+        $lines = explode("\n", str_replace("\r", "", $content));
+        
+        $questionTitle = '';
+        $options = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line)) continue;
+
+            $parts = explode('|', $line, 2);
+            $type  = strtoupper(trim($parts[0] ?? ''));
+            $value = trim($parts[1] ?? '');
+
+            if ($type === 'QUESTION') {
+                $questionTitle = $value;
+            } elseif ($type === 'OPTION' && $value !== '') {
+                $options[] = $value;
+            }
+        }
+
+        return [
+            'question_title' => $questionTitle ?: config('quiz.quiz.question_title'),
+            'options'        => !empty($options) ? $options : config('quiz.quiz.options'),
+        ];
+    }
+
+    // 1. Màn hình Live (Máy chiếu)[cite: 5]
     public function showLive()
     {
         $studentsMap = $this->getStudentsFromTextFile();
 
-        // Lấy danh sách nộp từ CSDL và khớp với Tên Sinh Viên từ file text[cite: 8]
         $submissions = StudentSubmission::latest()->get()->map(function ($item) use ($studentsMap) {
             $code = strtoupper(trim($item->student_code));
             return [
@@ -57,7 +97,7 @@ class StudentController extends Controller
         return view('live', compact('submissions'));
     }
 
-    // 2. Màn hình Sinh viên nhập Mã SV[cite: 8]
+    // 2. Màn hình Sinh viên nhập Mã SV[cite: 5]
     public function showCheckForm()
     {
         return view('student.check');
@@ -70,12 +110,10 @@ class StudentController extends Controller
 
         $studentsMap = $this->getStudentsFromTextFile();
 
-        // Kiểm tra xem MSSV có trong file text không
         if (!array_key_exists($studentId, $studentsMap)) {
             return back()->withInput()->withErrors(['student_id' => 'Mã sinh viên không có trong danh sách!']);
         }
 
-        // Lưu thông tin vào Session
         session([
             'current_student_id'   => $studentId,
             'current_student_name' => $studentsMap[$studentId]
@@ -84,7 +122,7 @@ class StudentController extends Controller
         return redirect()->route('student.quiz');
     }
 
-    // 3. Màn hình Trắc nghiệm[cite: 8]
+    // 3. Màn hình Trắc nghiệm (Đọc dữ liệu linh hoạt từ quiz.txt)[cite: 5]
     public function showQuizForm()
     {
         $studentId = session('current_student_id');
@@ -94,10 +132,17 @@ class StudentController extends Controller
             return redirect()->route('student.check');
         }
 
-        return view('student.quiz', compact('studentId', 'studentName'));
+        $quizData = $this->getQuizFromTextFile();
+
+        return view('student.quiz', [
+            'studentId'     => $studentId,
+            'studentName'   => $studentName,
+            'questionTitle' => $quizData['question_title'],
+            'options'       => $quizData['options']
+        ]);
     }
 
-    // 4. Lưu câu trả lời & BẮN PUSHER REALTIME (GIỮ NGUYÊN 100% CỦA BẠN)[cite: 8]
+    // 4. Lưu câu trả lời & BẮN PUSHER REALTIME[cite: 5]
     public function submitQuiz(Request $request)
     {
         $studentId = session('current_student_id');
@@ -109,13 +154,11 @@ class StudentController extends Controller
 
         $request->validate(['option' => 'required']);
 
-        // 1. Lưu câu trả lời vào CSDL[cite: 8]
         StudentSubmission::create([
             'student_code' => $studentId,
             'message'      => $request->option
         ]);
 
-        // 2. ⚡ BẮN EVENT PUSHER CẬP NHẬT TRỰC TIẾP MÀN HÌNH /LIVE (Lệnh gốc của bạn)[cite: 8]
         event(new StudentSubmitted($studentId, $studentName, $request->option));
 
         return view('student.thanks', [
@@ -124,7 +167,7 @@ class StudentController extends Controller
         ]);
     }
 
-    // 5. Hàm Xóa / Reset Cây Tri Thức (Yêu cầu PIN từ config/quiz.php)[cite: 8]
+    // 5. Hàm Xóa / Reset Cây Tri Thức[cite: 5]
     public function resetTree(Request $request)
     {
         $inputPin = $request->input('pin');
@@ -137,10 +180,8 @@ class StudentController extends Controller
             ], 403);
         }
 
-        // Xóa bài nộp trong DB[cite: 8]
         StudentSubmission::truncate();
 
-        // Bắn tín hiệu xóa bông hoa Realtime qua Pusher[cite: 8]
         try {
             $options = [
                 'cluster' => env('PUSHER_APP_CLUSTER'),
@@ -162,7 +203,7 @@ class StudentController extends Controller
         ]);
     }
 
-    // 6. Hàm Lưu File students.txt Từ Trang Admin (Yêu cầu PIN)
+    // 6. Hàm Lưu File students.txt Từ Trang Admin[cite: 5]
     public function saveStudentsText(Request $request)
     {
         $inputPin = $request->input('pin');
@@ -183,6 +224,41 @@ class StudentController extends Controller
         return response()->json([
             'status'  => 'success',
             'message' => 'Đã lưu danh sách sinh viên vào file thành công!'
+        ]);
+    }
+
+    // 7. Hàm Lưu File quiz.txt Từ Trang Admin (QUESTION|... và OPTION|...)
+    public function saveQuizText(Request $request)
+    {
+        $inputPin = $request->input('pin');
+        $correctPin = config('quiz.admin.pin') ?? config('quiz.admin.reset_pin', '654321');
+
+        if ($inputPin !== $correctPin) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Mã PIN bảo vệ không chính xác!'
+            ], 403);
+        }
+
+        $questionTitle = trim($request->input('question_title', ''));
+        $optionsRaw    = $request->input('options_text', '');
+
+        $lines = explode("\n", str_replace("\r", "", $optionsRaw));
+        
+        $content = "QUESTION|" . $questionTitle . "\n";
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (!empty($line)) {
+                $content .= "OPTION|" . $line . "\n";
+            }
+        }
+
+        $filePath = storage_path('app/quiz.txt');
+        file_put_contents($filePath, $content);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Đã lưu câu hỏi và danh sách đáp án vào file quiz.txt thành công!'
         ]);
     }
 }

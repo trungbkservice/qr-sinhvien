@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chọn đáp án - FPT University Quiz</title>
+    <title>Chọn đáp án - FPT Polytechnic</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -17,10 +17,9 @@
             background-color: #f8fafc;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh;
-            padding: 50px 0 20px 0; /* Tăng padding-top để Ong nhô lên không bị mất hình */
+            padding: 50px 0 20px 0;
         }
 
-        /* Wrapper tạo khoảng định vị cho linh vật absolute */
         .card-wrapper {
             position: relative;
             width: 100%;
@@ -36,34 +35,34 @@
             z-index: 2;
         }
 
-        /* Styling cho Linh vật Ong Bee ở góc trên bên phải */
+        /* 🐝 KHÔI PHỤC HÌNH ONG BEE Ở GÓC TRÊN BÊN PHẢI */
         .bee-mascot-top {
             position: absolute;
-            top: -62px;      /* Đẩy chú Ong nhô lên khỏi viền trắng */
-            right: 15px;     /* Nằm ở góc bên phải (trên đầu thẻ tên) */
-            height: 110px;   /* Kích thước chiều cao chú Ong */
+            top: -48px;
+            right: 8px;
+            height: 95px;
             width: auto;
-            z-index: 3;
+            z-index: 10;
             pointer-events: none;
             filter: drop-shadow(2px 6px 12px rgba(0, 0, 0, 0.15));
         }
 
         @media (max-width: 480px) {
             .bee-mascot-top {
-                top: -50px;
+                top: -42px;
                 right: 5px;
-                height: 90px;
+                height: 85px;
             }
         }
 
         .header-bar {
             background: #ffffff;
             border-bottom: 2px solid #f1f5f9;
-            padding: 16px 20px;
+            padding: 18px 20px;
         }
 
         .logo-img-small {
-            height: 42px;
+            height: 46px;
             width: auto;
         }
 
@@ -140,9 +139,8 @@
             <div class="col-md-7 col-lg-5">
                 
                 <div class="card-wrapper">
-                    <!-- Linh vật Ong Bee nằm ở góc trên bên phải Card -->
+                    <!-- 🐝 LINH VẬT ONG BEE ĐƯỢC ĐẶT LẠI ĐÚNG VỊ TRÍ GÓC TRÊN BÊN PHẢI -->
                     <img src="{{ asset('images/STROKE-2.png') }}" 
-                         onerror="this.style.display='none';" 
                          alt="FPT Bee Mascot" 
                          class="bee-mascot-top">
 
@@ -162,22 +160,22 @@
                         </div>
 
                         <div class="p-4">
-                            <!-- Khung Câu hỏi lấy từ Config -->
+                            <!-- Khung Câu hỏi lấy từ quiz.txt -->
                             <div class="question-box mb-4">
                                 <div class="d-flex align-items-center gap-2 mb-2">
                                     <span class="badge bg-warning text-dark fw-bold">CÂU HỎI LIVE</span>
                                 </div>
                                 <h5 class="fw-bold m-0 lh-base">
-                                    {{ config('quiz.quiz.question_title') }}
+                                    {{ $questionTitle }}
                                 </h5>
                             </div>
 
-                            <!-- Form chọn đáp án lấy từ Config -->
+                            <!-- Form chọn đáp án lấy từ quiz.txt -->
                             <form action="{{ route('student.submit_quiz') }}" method="POST">
                                 @csrf
                                 
                                 <div class="mb-4">
-                                    @foreach(config('quiz.quiz.options') as $index => $option)
+                                    @foreach($options as $index => $option)
                                         <div class="option-card mb-3" onclick="document.getElementById('opt-{{ $index }}').click();">
                                             <input class="form-check-input custom-radio me-3" 
                                                    type="radio" 
@@ -195,7 +193,7 @@
 
                                 <button type="submit" class="btn btn-submit w-100 d-flex align-items-center justify-content-center gap-2">
                                     <i class="fa-solid fa-paper-plane"></i>
-                                    <span>{{ config('quiz.quiz.button_text') }}</span>
+                                    <span>Gửi câu trả lời ngay</span>
                                 </button>
                             </form>
 
