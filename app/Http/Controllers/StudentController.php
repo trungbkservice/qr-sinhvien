@@ -3,30 +3,61 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Student;
 use App\Models\StudentSubmission;
 use App\Events\StudentSubmitted;
 use Pusher\Pusher;
 
 class StudentController extends Controller
 {
+    /**
+     * Hàm đọc trực tiếp dữ liệu từ file storage/app/students.txt
+     */
+    private function getStudentsFromTextFile(): array
+    {
+        $filePath = storage_path('app/students.txt');
+        if (!file_exists($filePath)) {
+            return [];
+        }
+
+        $content = file_get_contents($filePath);
+        $lines = explode("\n", str_replace("\r", "", $content));
+        $students = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line)) continue;
+
+            $parts = explode('|', $line);
+            $code = strtoupper(trim($parts[0] ?? ''));
+            $name = trim($parts[1] ?? 'Sinh viên');
+
+            if ($code !== '') {
+                $students[$code] = $name;
+            }
+        }
+
+        return $students;
+    }
+
     // 1. Màn hình Live (Máy chiếu)
     public function showLive()
     {
-        // Lấy danh sách nộp kèm Tên Sinh Viên từ CSDL
-        $submissions = StudentSubmission::latest()->get()->map(function ($item) {
-            $student = Student::where('student_code', $item->student_code)->first();
+        $studentsMap = $this->getStudentsFromTextFile();
+
+        // Lấy danh sách nộp từ CSDL và khớp với Tên Sinh Viên từ file text[cite: 8]
+        $submissions = StudentSubmission::latest()->get()->map(function ($item) use ($studentsMap) {
+            $code = strtoupper(trim($item->student_code));
             return [
                 'student_code' => $item->student_code,
-                'student_name' => $student ? $student->name : 'Sinh viên',
-                'message'      => $item->message, // Lựa chọn đáp án
+                'student_name' => $studentsMap[$code] ?? 'Sinh viên',
+                'message'      => $item->message,
             ];
         });
 
         return view('live', compact('submissions'));
     }
 
-    // 2. Màn hình Sinh viên nhập Mã SV
+    // 2. Màn hình Sinh viên nhập Mã SV[cite: 8]
     public function showCheckForm()
     {
         return view('student.check');
@@ -37,24 +68,23 @@ class StudentController extends Controller
         $request->validate(['student_id' => 'required|string']);
         $studentId = strtoupper(trim($request->student_id));
 
-        // Tìm sinh viên trong CSDL
-        $student = Student::where('student_code', $studentId)->first();
+        $studentsMap = $this->getStudentsFromTextFile();
 
-        // Nếu KHÔNG CÓ trong danh sách cho phép -> Báo lỗi ngay
-        if (!$student) {
-            return back()->withErrors(['student_id' => 'Mã sinh viên không có trong danh sách!']);
+        // Kiểm tra xem MSSV có trong file text không
+        if (!array_key_exists($studentId, $studentsMap)) {
+            return back()->withInput()->withErrors(['student_id' => 'Mã sinh viên không có trong danh sách!']);
         }
 
-        // Nếu CÓ trong danh sách -> Lưu thông tin vào Session
+        // Lưu thông tin vào Session
         session([
-            'current_student_id'   => $student->student_code,
-            'current_student_name' => $student->name
+            'current_student_id'   => $studentId,
+            'current_student_name' => $studentsMap[$studentId]
         ]);
 
         return redirect()->route('student.quiz');
     }
 
-    // 3. Màn hình Trắc nghiệm
+    // 3. Màn hình Trắc nghiệm[cite: 8]
     public function showQuizForm()
     {
         $studentId = session('current_student_id');
@@ -67,7 +97,7 @@ class StudentController extends Controller
         return view('student.quiz', compact('studentId', 'studentName'));
     }
 
-    // 4. Lưu câu trả lời & Bắn Pusher
+    // 4. Lưu câu trả lời & BẮN PUSHER REALTIME (GIỮ NGUYÊN 100% CỦA BẠN)[cite: 8]
     public function submitQuiz(Request $request)
     {
         $studentId = session('current_student_id');
@@ -79,19 +109,13 @@ class StudentController extends Controller
 
         $request->validate(['option' => 'required']);
 
-        // 1. Lưu/cập nhật thông tin Sinh viên vào bảng `students` khi Submit
-        Student::firstOrCreate(
-            ['student_code' => $studentId],
-            ['name'         => $studentName]
-        );
-
-        // 2. Lưu câu trả lời vào bảng `student_submissions`
+        // 1. Lưu câu trả lời vào CSDL[cite: 8]
         StudentSubmission::create([
             'student_code' => $studentId,
             'message'      => $request->option
         ]);
 
-        // 3. Bắn event Pusher cập nhật màn hình Live
+        // 2. ⚡ BẮN EVENT PUSHER CẬP NHẬT TRỰC TIẾP MÀN HÌNH /LIVE (Lệnh gốc của bạn)[cite: 8]
         event(new StudentSubmitted($studentId, $studentName, $request->option));
 
         return view('student.thanks', [
@@ -100,13 +124,12 @@ class StudentController extends Controller
         ]);
     }
 
-    // 5. Hàm Xóa / Reset Cây Tri Thức (Bảo vệ bằng Mã PIN từ config/quiz.php)
+    // 5. Hàm Xóa / Reset Cây Tri Thức (Yêu cầu PIN từ config/quiz.php)[cite: 8]
     public function resetTree(Request $request)
     {
         $inputPin = $request->input('pin');
         $correctPin = config('quiz.admin.pin') ?? config('quiz.admin.reset_pin', '654321');
 
-        // 1. Kiểm tra mã PIN bảo vệ
         if ($inputPin !== $correctPin) {
             return response()->json([
                 'status'  => 'error',
@@ -114,10 +137,10 @@ class StudentController extends Controller
             ], 403);
         }
 
-        // 2. Đúng PIN -> Truncate toàn bộ dữ liệu câu trả lời trong DB
+        // Xóa bài nộp trong DB[cite: 8]
         StudentSubmission::truncate();
 
-        // 3. Phát thông báo Realtime Pusher để xóa màn hình Live tự động
+        // Bắn tín hiệu xóa bông hoa Realtime qua Pusher[cite: 8]
         try {
             $options = [
                 'cluster' => env('PUSHER_APP_CLUSTER'),
@@ -131,7 +154,6 @@ class StudentController extends Controller
             );
             $pusher->trigger('quiz-channel', 'tree-reset', ['status' => 'cleared']);
         } catch (\Exception $e) {
-            // Bỏ qua nếu môi trường dev chưa cấu hình Pusher
         }
 
         return response()->json([
@@ -140,8 +162,8 @@ class StudentController extends Controller
         ]);
     }
 
-    // 6. Hàm Nạp / Cập nhật Danh sách Sinh viên từ JSON (Tương thích 100% với StudentSeeder)
-    public function importStudents(Request $request)
+    // 6. Hàm Lưu File students.txt Từ Trang Admin (Yêu cầu PIN)
+    public function saveStudentsText(Request $request)
     {
         $inputPin = $request->input('pin');
         $correctPin = config('quiz.admin.pin') ?? config('quiz.admin.reset_pin', '654321');
@@ -153,39 +175,14 @@ class StudentController extends Controller
             ], 403);
         }
 
-        $rawPayload = $request->input('students_json') ?? $request->getContent();
-        $studentsData = is_array($rawPayload) ? $rawPayload : json_decode($rawPayload, true);
+        $content = $request->input('students_text', '');
+        $filePath = storage_path('app/students.txt');
 
-        if (empty($studentsData) || !is_array($studentsData)) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Dữ liệu JSON rỗng hoặc không đúng định dạng!'
-            ], 400);
-        }
-
-        // Hỗ trợ cả 2 trường hợp: Gửi 1 SV dạng Object {} hoặc gửi Mảng [{}]
-        $items = isset($studentsData[0]) && is_array($studentsData[0]) ? $studentsData : [$studentsData];
-
-        $importedCount = 0;
-
-        foreach ($items as $item) {
-            $code = strtoupper(trim($item['student_code'] ?? $item['mssv'] ?? $item['student_id'] ?? $item['ma_sv'] ?? ''));
-            $name = trim($item['name'] ?? $item['student_name'] ?? $item['ten_sv'] ?? 'Sinh viên');
-
-            if (!$code) continue;
-
-            // Đồng bộ trực tiếp vào bảng `students` y hệt logic trong StudentSeeder
-            Student::updateOrCreate(
-                ['student_code' => $code],
-                ['name'         => $name]
-            );
-
-            $importedCount++;
-        }
+        file_put_contents($filePath, $content);
 
         return response()->json([
             'status'  => 'success',
-            'message' => "Đã nạp thành công {$importedCount} sinh viên vào danh sách!"
+            'message' => 'Đã lưu danh sách sinh viên vào file thành công!'
         ]);
     }
 }

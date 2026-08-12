@@ -13,10 +13,10 @@
         
         <div class="text-center mb-4">
             <h3 class="fw-bold text-warning"><i class="fa-solid fa-sliders me-2"></i>BẢNG ĐIỀU KHIỂN ADMIN</h3>
-            <p class="text-light small">Quản lý màn hình Cây Tri Thức & Danh Sách Sinh Viên</p>
+            <p class="text-light small">Quản lý Màn Hình Cây & Danh Sách Sinh Viên</p>
         </div>
 
-        <!-- MÃ PIN DÙNG CHUNG -->
+        <!-- MÃ PIN BẢO VỆ DÙNG CHUNG -->
         <div class="card bg-secondary text-white p-3 rounded-4 shadow-lg mb-4 border-0">
             <label class="form-label fw-bold text-warning mb-2 text-center d-block">
                 🔑 NHẬP MÃ PIN BẢO VỆ ADMIN:
@@ -24,20 +24,19 @@
             <input type="password" id="admin-pin" class="form-control text-center fs-4 fw-bold font-monospace" placeholder="******" value="654321">
         </div>
 
-        <!-- KHUNG 1: NẠP DANH SÁCH SINH VIÊN -->
+        <!-- KHUNG 1: CHỈNH SỬA FILE STUDENTS.TXT -->
         <div class="card bg-secondary text-white p-4 rounded-4 shadow-lg mb-4 border-0">
-            <h5 class="fw-bold mb-3 text-info"><i class="fa-solid fa-user-plus me-2"></i>1. Nạp Danh Sách Sinh Viên (JSON)</h5>
+            <h5 class="fw-bold mb-2 text-info"><i class="fa-solid fa-file-pen me-2"></i>1. Danh Sách Sinh Viên</h5>
+            <p class="text-light small mb-2">Định dạng: MA_SV|TEN_SINH_VIEN (mỗi SV một dòng)</p>
             
             <div class="mb-3">
-                <label class="form-label small text-light">Dán dữ liệu JSON vào đây:</label>
-                <textarea id="json-input" class="form-control font-monospace text-dark" rows="5" placeholder='[
-  {"student_code": "SV001", "name": "Nguyễn Văn An"},
-  {"student_code": "SV002", "name": "Trần Thị Bình"}
-]'></textarea>
+                <textarea id="students-text" class="form-control font-monospace text-dark" rows="8" placeholder="SV001|Nguyễn Văn An
+SV002|Trần Thị Bình
+SV003|Lê Hoàng Cường">{{ $studentsText ?? '' }}</textarea>
             </div>
 
-            <button onclick="submitStudents()" class="btn btn-warning fw-bold py-2 shadow w-100">
-                📥 NẠP DANH SÁCH VÀO DATABASE
+            <button onclick="saveStudentsText()" class="btn btn-warning fw-bold py-2 shadow w-100">
+                💾 LƯU FILE TEXT
             </button>
         </div>
 
@@ -57,10 +56,10 @@
     </div>
 
     <script>
-        // 1. Hàm nạp danh sách sinh viên
-        function submitStudents() {
+        // 1. Hàm lưu file text (Yêu cầu PIN)
+        function saveStudentsText() {
             const pin = document.getElementById('admin-pin').value;
-            const rawJson = document.getElementById('json-input').value;
+            const content = document.getElementById('students-text').value;
             const msg = document.getElementById('status-msg');
 
             if (!pin) {
@@ -68,12 +67,7 @@
                 return;
             }
 
-            if (!rawJson.trim()) {
-                alert("Vui lòng dán danh sách sinh viên dạng JSON!");
-                return;
-            }
-
-            fetch("{{ route('admin.import_students') }}", {
+            fetch("{{ route('admin.save_students') }}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -81,14 +75,13 @@
                 },
                 body: JSON.stringify({
                     pin: pin,
-                    students_json: rawJson
+                    students_text: content
                 })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
                     msg.innerHTML = '<span class="text-success fw-bold">✅ ' + data.message + '</span>';
-                    document.getElementById('json-input').value = '';
                 } else {
                     msg.innerHTML = '<span class="text-warning fw-bold">❌ ' + data.message + '</span>';
                 }
@@ -98,7 +91,7 @@
             });
         }
 
-        // 2. Hàm xóa cây tri thức (giữ nguyên logic gốc)
+        // 2. Hàm xóa cây tri thức (Yêu cầu PIN)
         function resetTree() {
             const pin = document.getElementById('admin-pin').value;
             const msg = document.getElementById('status-msg');

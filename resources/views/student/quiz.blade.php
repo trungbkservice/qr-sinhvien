@@ -17,7 +17,13 @@
             background-color: #f8fafc;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh;
-            padding: 20px 0;
+            padding: 50px 0 20px 0; /* Tăng padding-top để Ong nhô lên không bị mất hình */
+        }
+
+        /* Wrapper tạo khoảng định vị cho linh vật absolute */
+        .card-wrapper {
+            position: relative;
+            width: 100%;
         }
 
         .quiz-card {
@@ -26,6 +32,28 @@
             border: 1px solid rgba(226, 232, 240, 0.8);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
             overflow: hidden;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Styling cho Linh vật Ong Bee ở góc trên bên phải */
+        .bee-mascot-top {
+            position: absolute;
+            top: -62px;      /* Đẩy chú Ong nhô lên khỏi viền trắng */
+            right: 15px;     /* Nằm ở góc bên phải (trên đầu thẻ tên) */
+            height: 110px;   /* Kích thước chiều cao chú Ong */
+            width: auto;
+            z-index: 3;
+            pointer-events: none;
+            filter: drop-shadow(2px 6px 12px rgba(0, 0, 0, 0.15));
+        }
+
+        @media (max-width: 480px) {
+            .bee-mascot-top {
+                top: -50px;
+                right: 5px;
+                height: 90px;
+            }
         }
 
         .header-bar {
@@ -35,7 +63,7 @@
         }
 
         .logo-img-small {
-            height: 38px;
+            height: 42px;
             width: auto;
         }
 
@@ -111,59 +139,67 @@
         <div class="row justify-content-center">
             <div class="col-md-7 col-lg-5">
                 
-                <div class="quiz-card">
-                    <!-- Top Bar Header -->
-                    <div class="header-bar d-flex justify-content-between align-items-center">
-                        <img src="{{ asset('images/fpt-logo.png') }}" 
-                             onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/FPT_logo.svg/1024px-FPT_logo.svg.png';" 
-                             alt="FPT Logo" 
-                             class="logo-img-small">
-                        
-                        <div class="student-pill d-flex align-items-center gap-2">
-                            <i class="fa-solid fa-user-graduate text-warning"></i>
-                            <span class="fw-bold text-dark small">{{ $studentName }}</span>
-                            <span class="badge bg-danger rounded-pill px-2">{{ $studentId }}</span>
-                        </div>
-                    </div>
+                <div class="card-wrapper">
+                    <!-- Linh vật Ong Bee nằm ở góc trên bên phải Card -->
+                    <img src="{{ asset('images/STROKE-2.png') }}" 
+                         onerror="this.style.display='none';" 
+                         alt="FPT Bee Mascot" 
+                         class="bee-mascot-top">
 
-                    <div class="p-4">
-                        <!-- Khung Câu hỏi lấy từ Config -->
-                        <div class="question-box mb-4">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <span class="badge bg-warning text-dark fw-bold">CÂU HỎI LIVE</span>
-                            </div>
-                            <h5 class="fw-bold m-0 lh-base">
-                                {{ config('quiz.quiz.question_title') }}
-                            </h5>
-                        </div>
-
-                        <!-- Form chọn đáp án lấy từ Config -->
-                        <form action="{{ route('student.submit_quiz') }}" method="POST">
-                            @csrf
+                    <div class="quiz-card">
+                        <!-- Top Bar Header -->
+                        <div class="header-bar d-flex justify-content-between align-items-center">
+                            <img src="{{ asset('images/fpt-logo-2.png') }}" 
+                                 onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/FPT_logo.svg/1024px-FPT_logo.svg.png';" 
+                                 alt="FPT Logo" 
+                                 class="logo-img-small">
                             
-                            <div class="mb-4">
-                                @foreach(config('quiz.quiz.options') as $index => $option)
-                                    <div class="option-card mb-3" onclick="document.getElementById('opt-{{ $index }}').click();">
-                                        <input class="form-check-input custom-radio me-3" 
-                                               type="radio" 
-                                               name="option" 
-                                               id="opt-{{ $index }}" 
-                                               value="{{ $option }}" 
-                                               required 
-                                               onclick="event.stopPropagation();">
-                                        <label class="fw-semibold text-dark w-100 m-0" style="cursor: pointer;" for="opt-{{ $index }}">
-                                            {{ $option }}
-                                        </label>
-                                    </div>
-                                @endforeach
+                            <div class="student-pill d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-user-graduate text-warning"></i>
+                                <span class="fw-bold text-dark small">{{ $studentName }}</span>
+                                <span class="badge bg-danger rounded-pill px-2">{{ $studentId }}</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4">
+                            <!-- Khung Câu hỏi lấy từ Config -->
+                            <div class="question-box mb-4">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="badge bg-warning text-dark fw-bold">CÂU HỎI LIVE</span>
+                                </div>
+                                <h5 class="fw-bold m-0 lh-base">
+                                    {{ config('quiz.quiz.question_title') }}
+                                </h5>
                             </div>
 
-                            <button type="submit" class="btn btn-submit w-100 d-flex align-items-center justify-content-center gap-2">
-                                <i class="fa-solid fa-paper-plane"></i>
-                                <span>{{ config('quiz.quiz.button_text') }}</span>
-                            </button>
-                        </form>
+                            <!-- Form chọn đáp án lấy từ Config -->
+                            <form action="{{ route('student.submit_quiz') }}" method="POST">
+                                @csrf
+                                
+                                <div class="mb-4">
+                                    @foreach(config('quiz.quiz.options') as $index => $option)
+                                        <div class="option-card mb-3" onclick="document.getElementById('opt-{{ $index }}').click();">
+                                            <input class="form-check-input custom-radio me-3" 
+                                                   type="radio" 
+                                                   name="option" 
+                                                   id="opt-{{ $index }}" 
+                                                   value="{{ $option }}" 
+                                                   required 
+                                                   onclick="event.stopPropagation();">
+                                            <label class="fw-semibold text-dark w-100 m-0" style="cursor: pointer;" for="opt-{{ $index }}">
+                                                {{ $option }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
 
+                                <button type="submit" class="btn btn-submit w-100 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                    <span>{{ config('quiz.quiz.button_text') }}</span>
+                                </button>
+                            </form>
+
+                        </div>
                     </div>
                 </div>
 

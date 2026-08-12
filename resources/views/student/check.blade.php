@@ -24,15 +24,42 @@
             margin: 0;
         }
 
+        /* Khung bao ngoài để căn vị trí linh vật đè mép */
+        .card-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+        }
+
         .check-card {
             background: #ffffff;
             border-radius: 24px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
             border: 1px solid rgba(226, 232, 240, 0.8);
             width: 100%;
-            max-width: 420px;
             overflow: hidden;
+            position: relative;
+            z-index: 2;
             transition: transform 0.3s ease;
+        }
+
+        /* Styling cho Ong Bee nhô ra ở góc dưới bên phải */
+        .bee-mascot {
+            position: absolute;
+            right: -42px;
+            bottom: -10px;
+            height: 135px;
+            width: auto;
+            z-index: 3;
+            pointer-events: none;
+            filter: drop-shadow(4px 6px 12px rgba(0, 0, 0, 0.15));
+        }
+
+        @media (max-width: 480px) {
+            .bee-mascot {
+                right: -20px;
+                height: 120px;
+            }
         }
 
         .brand-header {
@@ -101,54 +128,78 @@
 </head>
 <body>
 
-<div class="check-card">
-    <!-- Branding Header -->
-    <div class="brand-header">
-        <img src="{{ asset('images/fpt-logo.png') }}" 
-             onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/FPT_logo.svg/1024px-FPT_logo.svg.png';" 
-             alt="FPT University Logo" 
-             class="logo-img">
-        <div class="mt-2">
-            <span class="badge-fpt"><i class="fa-solid fa-tree me-1"></i> CÂY TRI THỨC LIVE</span>
-        </div>
-    </div>
+<div class="card-wrapper">
+    <!-- Linh vật Ong Bee đứng chào mừng ở góc Card -->
+    <img src="{{ asset('images/STROKE-3.png') }}" 
+         onerror="this.style.display='none';" 
+         alt="FPT Bee Mascot" 
+         class="bee-mascot">
 
-    <!-- Form Body -->
-    <div class="p-4">
-        <div class="text-center mb-4">
-            <h5 class="fw-bold text-dark mb-1">{{ config('quiz.form.title') }}</h5>
-            <p class="text-muted small">{{ config('quiz.form.subtitle') }}</p>
-        </div>
-
-        @if($errors->any())
-            <div class="alert alert-danger border-0 shadow-sm rounded-3 p-3 mb-3 small d-flex align-items-center">
-                <i class="fa-solid fa-circle-exclamation me-2 fs-5"></i>
-                <div>{{ $errors->first() }}</div>
+    <div class="check-card">
+        <!-- Branding Header chứa Logo FPT của bạn -->
+        <div class="brand-header">
+            <img src="{{ asset('images/fpt-logo-2.png') }}" 
+                 onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/FPT_logo.svg/1024px-FPT_logo.svg.png';" 
+                 alt="FPT University Logo" 
+                 class="logo-img">
+            <div class="mt-2">
+                <span class="badge-fpt"><i class="fa-solid fa-tree me-1"></i> CÂY TRI THỨC LIVE</span>
             </div>
-        @endif
+        </div>
 
-        <form action="{{ route('student.process_check') }}" method="POST">
-            @csrf
-            <div class="mb-4">
-                <label class="form-label small fw-bold text-secondary">{{ config('quiz.form.input_label') }}</label>
-                <div class="position-relative">
-                    <input type="text" 
-                           name="student_id" 
-                           class="form-control input-custom text-center fw-bold text-uppercase" 
-                           placeholder="{{ config('quiz.form.input_placeholder') }}" 
-                           required 
-                           autofocus 
-                           autocomplete="off">
+        <!-- Form Body -->
+        <div class="p-4">
+            <div class="text-center mb-4">
+                <h5 class="fw-bold text-dark mb-1">{{ config('quiz.form.title') }}</h5>
+                <p class="text-muted small">{{ config('quiz.form.subtitle') }}</p>
+            </div>
+
+            @if($errors->any())
+                <div class="alert alert-danger border-0 shadow-sm rounded-3 p-3 mb-3 small d-flex align-items-center">
+                    <i class="fa-solid fa-circle-exclamation me-2 fs-5"></i>
+                    <div>{{ $errors->first() }}</div>
                 </div>
-            </div>
+            @endif
 
-            <button type="submit" class="btn btn-fpt w-100 d-flex align-items-center justify-content-center gap-2">
-                <span>{{ config('quiz.form.button_text') }}</span>
-                <i class="fa-solid fa-arrow-right"></i>
-            </button>
-        </form>
+            <form action="{{ route('student.process_check') }}" method="POST">
+                @csrf
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-secondary">{{ config('quiz.form.input_label') }}</label>
+                    <div class="position-relative">
+                        <input type="text" 
+                               id="student_id_input"
+                               name="student_id" 
+                               class="form-control input-custom text-center fw-bold text-uppercase" 
+                               placeholder="{{ config('quiz.form.input_placeholder') }}" 
+                               value="{{ old('student_id', request('student_id', session('current_student_id'))) }}"
+                               required 
+                               autofocus 
+                               autocomplete="off">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-fpt w-100 d-flex align-items-center justify-content-center gap-2">
+                    <span>{{ config('quiz.form.button_text') }}</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('student_id_input');
+        if (input) {
+            // Focus vào ô input
+            input.focus();
+            
+            // Đặt con trỏ nháy ở vị trí cuối cùng bên phải
+            const len = input.value.length;
+            input.setSelectionRange(len, len);
+        }
+    });
+</script>
 
 </body>
 </html>

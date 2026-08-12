@@ -11,7 +11,7 @@ return [
     // 1. CẤU HÌNH TRANG LIVE CÂY TRI THỨC (/live)
     'live' => [
         // Ảnh nền cây tri thức (nằm trong thư mục public/)
-        'background_image' => 'images/cay-tri-thuc-1.webp',
+        'background_image' => 'images/cay-tri-thuc-3.webp',
 
         // Link đích khi quét QR Code (để trống '' nếu muốn tự lấy link /quiz)
         'qr_target_url' => '', 
@@ -31,13 +31,14 @@ return [
 
     // 2. CẤU HÌNH TRANG CÂU HỎI TRẮC NGHIỆM (/quiz)
     'quiz' => [
-        'question_title' => 'Theo bạn, yếu tố quan trọng nhất để thành công là gì?',
+        'question_title' => 'Theo bạn, yếu tố quan trọng nhất để thành công là gì??',
         
         'options' => [
             'A. Kiên trì & Nỗ lực',
             'B. Tư duy Sáng tạo',
             'C. Kỹ năng Làm việc nhóm',
             'D. May mắn',
+            'E. Thần tài đến',
         ],
         
         'button_text' => 'Gửi câu trả lời ngay',
@@ -55,13 +56,13 @@ return [
     ],
 
     // 4. CẤU HÌNH TRANG CẢM ƠN HẬU SUBMIT (/thanks)
-    'thanks' => [
-        'title' => 'GỬI THÀNH CÔNG!',
-        'message' => 'Câu trả lời của bạn đã xuất hiện Realtime lên Cây Tri Thức! 🚀',
-    ],
+    // 'thanks' => [
+    //     'title' => 'GỬI THÀNH CÔNG!',
+    //     'message' => 'Câu trả lời của bạn đã xuất hiện Realtime lên Cây Tri Thức! 🚀',
+    // ],
 
     // 5. CẤU HÌNH BẢO MẬT ADMIN (Dùng chung cho Nạp SV & Reset Cây)
     'admin' => [
-        'pin' => '65432111', // Mã PIN bảo vệ admin duy nhất
+        'pin' => '654321', // Mã PIN bảo vệ admin duy nhất
     ],
 ];

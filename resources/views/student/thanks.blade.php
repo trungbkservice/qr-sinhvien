@@ -30,14 +30,36 @@
             border: 1px solid rgba(226, 232, 240, 0.8);
             width: 100%; 
             max-width: 420px; 
-            overflow: hidden;
             text-align: center;
+            position: relative;
+        }
+
+        /* 🟢 CHỈNH ONG BEE TO HƠN & KÉO THỤT VÀO TRONG */
+        .bee-mascot-thanks {
+            position: absolute;
+            top: 10px;        /* Hạ vị trí xuống vừa đẹp tầm mắt */
+            right: 15px;      /* 👈 Kéo thụt vào hẳn trong khung (không bị trôi ra rìa nữa) */
+            height: 125px;    /* 👈 Tăng kích thước to rõ nét (cũ là 95px) */
+            width: auto;
+            z-index: 99;
+            pointer-events: none;
+            filter: drop-shadow(2px 4px 8px rgba(0, 0, 0, 0.15));
+        }
+
+        @media (max-width: 480px) {
+            .bee-mascot-thanks {
+                top: 10px;
+                right: 10px;
+                height: 95px;
+            }
         }
 
         .header-bg {
             background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
             padding: 28px 20px 20px 20px;
             border-bottom: 2px dashed #ffedd5;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
         }
 
         .logo-img {
@@ -75,13 +97,38 @@
             font-weight: 700;
             display: inline-block;
         }
+
+        .btn-back {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
     </style>
 </head>
 <body>
 
 <div class="thanks-card">
+    <!-- Linh vật Ong Bee nằm bên phải trong khung Header -->
+    <img src="{{ asset('images/STROKE-3.png') }}" 
+         alt="FPT Bee Mascot" 
+         class="bee-mascot-thanks">
+
     <div class="header-bg">
-        <img src="{{ asset('images/fpt-logo.png') }}" 
+        <img src="{{ asset('images/fpt-logo-2.png') }}" 
              onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/FPT_logo.svg/1024px-FPT_logo.svg.png';" 
              alt="FPT Logo" 
              class="logo-img">
@@ -100,12 +147,11 @@
             <span class="student-badge mt-2">MSSV: {{ $studentId }}</span>
         </p>
 
-        <div class="alert alert-warning border-0 bg-warning-subtle text-dark p-3 rounded-3 small text-start d-flex align-items-center gap-2 mb-0">
-            <i class="fa-solid fa-tree text-warning fs-4 me-1"></i>
-            <div>
-                {{ config('quiz.thanks.message') }}
-            </div>
-        </div>
+        <!-- Nút BACK quay lại route student.quiz -->
+        <a href="{{ route('student.quiz') }}" class="btn-back w-100">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>BACK</span>
+        </a>
     </div>
 </div>
 
